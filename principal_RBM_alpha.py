@@ -26,8 +26,9 @@ for q in [50, 100, 200, 300]:
     print(f"\nTraining RBM 320 -> {q}")
     rbm = init_RBM(320, q)
     train_RBM(rbm, data, epochs=100, lr=0.1, batch_size=32)
-    generer_image_RBM(rbm, n_gibbs=500, n_images=10, image_shape=(20, 16))
-    plt.savefig(f"rbm_alpha_q{q}.png", dpi=150, bbox_inches="tight")
+    generer_image_RBM(rbm, n_gibbs=500, n_images=10, image_shape=(20, 16),
+                      save_path=f"rbm_alpha_q{q}.png",
+                      title=f"RBM Generated (q={q})")
 
 # --- Experiment 2: Effect of character diversity ---
 print("\n=== Effect of character diversity ===")
@@ -37,7 +38,8 @@ for n_chars in [3, 10, 36]:
     print(f"\nTraining RBM on {n_chars} characters ({data_div.shape[0]} samples)")
     rbm = init_RBM(320, 200)
     train_RBM(rbm, data_div, epochs=100, lr=0.1, batch_size=32)
-    generer_image_RBM(rbm, n_gibbs=500, n_images=10, image_shape=(20, 16))
-    plt.savefig(f"rbm_alpha_nchars{n_chars}.png", dpi=150, bbox_inches="tight")
+    generer_image_RBM(rbm, n_gibbs=500, n_images=10, image_shape=(20, 16),
+                      save_path=f"rbm_alpha_nchars{n_chars}.png",
+                      title=f"RBM Generated ({n_chars} chars, q=200)")
 
 print("\nDone! Check generated images.")

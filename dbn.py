@@ -23,7 +23,7 @@ def train_DBN(dbn, data, epochs=100, lr=0.1, batch_size=128, verbose=True):
         current_data = entree_sortie_RBM(rbm, current_data)
 
 
-def generer_image_DBN(dbn, n_gibbs=1000, n_images=10, image_shape=None):
+def generer_image_DBN(dbn, n_gibbs=1000, n_images=10, image_shape=None, save_path=None, title="DBN Generated Images"):
     """Generate images from DBN: Gibbs sampling at top layer, then top-down propagation."""
     p = dbn[0]["W"].shape[0]
     if image_shape is None:
@@ -64,9 +64,10 @@ def generer_image_DBN(dbn, n_gibbs=1000, n_images=10, image_shape=None):
         if i < n_images:
             ax.imshow(current[i].reshape(image_shape), cmap="gray")
         ax.axis("off")
-    plt.suptitle("DBN Generated Images")
+    plt.suptitle(title)
     plt.tight_layout()
-    plt.savefig("dbn_generated.png", dpi=150, bbox_inches="tight")
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.show()
 
     return current
