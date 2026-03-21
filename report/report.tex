@@ -165,7 +165,7 @@ We train RBMs with $q \in \{50, 100, 200, 300\}$ hidden units (100 epochs, $\eta
     \label{fig:rbm_q}
 \end{figure}
 
-With $q = 50$, the generated images are blurry and lack structure, indicating insufficient capacity to capture the data distribution. At $q = 100$, recognizable digit shapes begin to emerge. With $q = 200$ and $q = 300$, the generated images are sharp and closely resemble the training data. Beyond $q = 200$, there is no significant visual improvement, suggesting that 200 hidden units provide sufficient representational capacity for this dataset.
+With $q = 50$, the generated images are very noisy with almost no discernible structure, indicating insufficient capacity to capture the data distribution. At $q = 100$, some local structure begins to emerge --- contiguous black regions and edges become visible, though the images remain noisy. With $q = 200$ and $q = 300$, the generated images show clearer block structures reminiscent of the training characters, with recognizable vertical and diagonal strokes. The improvement from 200 to 300 is marginal, suggesting that $q = 200$ provides a reasonable trade-off between capacity and the limited training set size (117 samples). Nevertheless, the binary stochastic nature of the Gibbs sampling process inherently produces noisy outputs.
 
 \subsubsection{Effect of Character Diversity}
 
@@ -194,7 +194,7 @@ We fix $q = 200$ and vary the number of characters used for training: 3, 10, and
     \label{fig:rbm_nchars}
 \end{figure}
 
-With 3 characters, the RBM produces clean, recognizable digits. As we increase to 10 and 36 characters, the generated images become progressively noisier and less distinct. This is expected: with only 39 samples per character and a fixed hidden layer size, the model must represent a much more diverse distribution. The limited data per class combined with the increased variety leads to a less sharp generative model. This highlights a fundamental limitation of RBMs with fixed capacity when the complexity of the target distribution increases.
+With 3 characters, the generated images capture some structural features of the digits but remain noisy due to the very small training set (117 samples). Interestingly, with 36 characters (1,404 samples), the generated images appear more structured, with clearer character-like shapes. This is because more training data allows the RBM to learn more robust features, even though the distribution is more diverse. The increased data volume compensates for the added complexity, highlighting that RBM quality depends heavily on having sufficient training samples.
 
 % ------------------------------------------------------------
 \subsection{DBN Experiments}
@@ -228,7 +228,7 @@ We train DBNs with 1, 2, and 3 hidden layers on characters 0, 1, 2.
     \label{fig:dbn_layers}
 \end{figure}
 
-The single-layer DBN (equivalent to an RBM) produces sharp images. The 2-layer DBN generates images of comparable quality, showing that the additional layer of abstraction does not degrade performance. However, the 3-layer DBN produces slightly less crisp images. This suggests that for this small dataset, deeper architectures do not bring additional benefit and may even slightly hurt generation quality, likely because the top RBM operates on a very low-dimensional space ($50$ units) with limited expressiveness for Gibbs sampling.
+The single-layer DBN (equivalent to an RBM) produces noisy binary images, similar to those from the standalone RBM. The \textbf{2-layer DBN} produces the best results: the top-down propagation through two layers of learned probabilities generates smooth grayscale images with clearly recognizable digit shapes (0s and 2s are distinctly visible). This demonstrates the benefit of hierarchical feature learning --- the first layer captures low-level structure while the second captures higher-level abstractions. The 3-layer DBN, however, produces blurry and less distinct grayscale images. The top RBM operates on only 50 hidden units, which limits the expressiveness of the Gibbs sampling and leads to less informative top-layer representations being propagated downward.
 
 \subsubsection{Effect of Character Diversity on DBN}
 
@@ -257,7 +257,7 @@ We fix the architecture to $320 \to 200 \to 100$ and vary the number of characte
     \label{fig:dbn_nchars}
 \end{figure}
 
-The trend is similar to the RBM experiments: image quality degrades with more character classes. The DBN shows a modest improvement over the single-layer RBM when handling more diverse data, thanks to the hierarchical feature representation. Nevertheless, the overall limitation remains: with 39 samples per class and increasing diversity, the model cannot fully capture the distribution.
+The 2-layer DBN produces smooth grayscale images across all diversity levels. With 5 characters, the generated images are the most recognizable. As the number of characters increases to 36, the generated images become more uniform and less class-specific, as the model averages over a wider distribution. Compared to the standalone RBM, the DBN's hierarchical structure and probability-based top-down propagation consistently produce smoother and more recognizable outputs, confirming the benefit of deep generative models even on this small dataset.
 
 % ============================================================
 \section{Study on MNIST}
@@ -279,7 +279,7 @@ We fix the number of neurons per hidden layer at 200 and vary the number of hidd
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\linewidth]{fig1_layers.png}
-    \caption{Classification error rate on the test set as a function of the number of hidden layers (200 neurons each). Blue: pre-trained + backprop. Red: random init + backprop.}
+    \caption{Classification error rate on the test set as a function of the number of hidden layers (200 neurons each). Blue: pre-trained + backpropagation. Red: random initialization + backpropagation.}
     \label{fig:fig1}
 \end{figure}
 
@@ -396,7 +396,7 @@ Based on the three experiments above, the optimal configuration is:
     \label{fig:softmax}
 \end{figure}
 
-The best model achieves a test error rate of approximately \textbf{2.5--3\%}. The softmax output probabilities (Figure~\ref{fig:softmax}) show confident and well-calibrated predictions, with the probability mass concentrated on the correct class for most samples.
+The best model achieves a test error rate of \textbf{2.51\%}. The softmax output probabilities (Figure~\ref{fig:softmax}) show confident and well-calibrated predictions, with the probability mass concentrated almost entirely on the correct class. All 10 randomly selected test samples in the figure are correctly classified with near-certainty.
 
 % ============================================================
 \section{Bonus: Generative Models Comparison}
@@ -418,9 +418,10 @@ The VAE, GAN, and DDPM are implemented in PyTorch and trained on Google Colab wi
 \begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{bonus_comparison.png}
-    \caption{Generated MNIST samples from five generative models with approximately the same parameter budget.}
+    \caption{Generated MNIST samples from five generative models with approximately the same parameter budget. Generated via the Colab notebook \texttt{notebooks/bonus\_comparison.ipynb}.}
     \label{fig:bonus}
 \end{figure}
+\noindent\textit{Note: This figure is generated by running the Colab notebook, which downloads MNIST and trains all five models with GPU acceleration.}
 
 \textbf{Analysis.}
 \begin{itemize}
@@ -442,7 +443,7 @@ This project demonstrated the complete pipeline from unsupervised feature learni
     \item \textbf{Pre-training mitigates the vanishing gradient problem} in deep networks, enabling effective training of architectures with 4--5 hidden layers that would otherwise fail with random initialization.
     \item \textbf{For shallow networks (2 layers), the benefit of pre-training is marginal} when sufficient labeled data is available, but becomes significant in the low-data regime.
     \item \textbf{Pre-trained networks scale better with width}: increasing hidden units to 700 yields consistent improvement for pre-trained networks, while randomly initialized networks plateau earlier.
-    \item The \textbf{optimal configuration} for MNIST classification is $[784, 700, 700, 10]$ with pre-training, achieving $\approx 2.5\%$ test error.
+    \item The \textbf{optimal configuration} for MNIST classification is $[784, 700, 700, 10]$ with pre-training, achieving $2.51\%$ test error.
     \item Among generative models with comparable parameter budgets, \textbf{GANs produce the sharpest samples}, \textbf{VAEs offer the best quality-stability trade-off}, and \textbf{diffusion models require convolutional architectures} to reach their potential.
 \end{enumerate}
 
