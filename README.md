@@ -12,7 +12,7 @@
 <img src="https://img.shields.io/badge/MNIST-10%20classes-green?style=for-the-badge"/>
 <img src="https://img.shields.io/badge/PyTorch-bonus%20only-ee4c2c?style=for-the-badge&logo=pytorch&logoColor=white"/>
 <!-- ALL-CONTRIBUTORS-BADGE:START -->
-<img src="https://img.shields.io/badge/contributors-1-orange.svg?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/contributors-2-orange.svg?style=for-the-badge"/>
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 </p>
 
@@ -148,6 +148,23 @@ cd APM_5DS24_TP---Deep-Learning-II
 pip install -r requirements.txt
 ```
 
+### Data setup
+
+The datasets are **not included** in the repository. You must manually place them in the `data/` folder:
+
+```text
+data/
+├── binaryalphadigs.mat              # Binary AlphaDigits (.mat file)
+└── Fichiers MNIST-20260320/         # Unzipped MNIST folder
+    ├── train-images-idx3-ubyte
+    ├── train-labels-idx1-ubyte
+    ├── t10k-images-idx3-ubyte
+    └── t10k-labels-idx1-ubyte
+```
+
+1. Place `binaryalphadigs.mat` directly inside `data/`
+2. Unzip the MNIST archive into `data/Fichiers MNIST-20260320/` (keep the 4 raw IDX files at the top level of that folder)
+
 ### Running experiments
 
 ```bash
@@ -203,6 +220,14 @@ The full project report is available at [`report/magalhaes_yang-TP-DNN.pdf`](rep
         <sub><b>Sergio Magalhaes Contente</b></sub>
       </a><br/>
       <a href="https://github.com/sergio-contente/APM_5DS24_TP---Deep-Learning-II/commits?author=sergio-contente" title="Code">💻</a>
+      <a href="#" title="Documentation">📖</a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/MiaYoung2023">
+        <img src="https://avatars.githubusercontent.com/u/MiaYoung2023" width="100px;" alt=""/><br/>
+        <sub><b>Chenxi Yang</b></sub>
+      </a><br/>
+      <a href="https://github.com/sergio-contente/APM_5DS24_TP---Deep-Learning-II/commits?author=MiaYoung2023" title="Code">💻</a>
       <a href="#" title="Documentation">📖</a>
     </td>
   </tr>

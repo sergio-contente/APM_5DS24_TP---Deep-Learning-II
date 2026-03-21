@@ -60,7 +60,28 @@ Nous proc\'edons en trois \'etapes~:
 
 \subsection{Ex\'ecution du code}
 
-Le code est organis\'e dans le package \texttt{src/} (modules \texttt{rbm.py}, \texttt{dbn.py}, \texttt{dnn.py}, \texttt{utils.py}). Les donn\'ees MNIST sont celles fournies avec le sujet (r\'epertoire \texttt{data/}). Pour reproduire les exp\'eriences~:
+Le code est organis\'e dans le package \texttt{src/} (modules \texttt{rbm.py}, \texttt{dbn.py}, \texttt{dnn.py}, \texttt{utils.py}).
+
+\paragraph{Mise en place des donn\'ees.}
+Les jeux de donn\'ees ne sont pas inclus dans le d\'ep\^ot et doivent \^etre plac\'es manuellement dans le r\'epertoire \texttt{data/}~:
+
+\begin{lstlisting}
+data/
+  binaryalphadigs.mat              # Binary AlphaDigits (.mat)
+  Fichiers MNIST-20260320/         # Archive MNIST dezippee
+      train-images-idx3-ubyte
+      train-labels-idx1-ubyte
+      t10k-images-idx3-ubyte
+      t10k-labels-idx1-ubyte
+\end{lstlisting}
+
+\begin{itemize}
+    \item Placer le fichier \texttt{binaryalphadigs.mat} directement dans \texttt{data/}.
+    \item D\'ezipper l'archive MNIST fournie avec le sujet dans \texttt{data/Fichiers MNIST-20260320/} (les 4 fichiers IDX bruts doivent se trouver \`a la racine de ce sous-r\'epertoire).
+\end{itemize}
+
+\paragraph{Ex\'ecution.}
+Pour reproduire les exp\'eriences~:
 
 \begin{lstlisting}
 pip install numpy matplotlib scipy
@@ -73,7 +94,124 @@ python experiments/principal_best_model.py  # Meilleur modele
 Le notebook bonus (\texttt{notebooks/bonus\_comparison.ipynb}) est pr\'evu pour Google Colab avec GPU.
 
 % ============================================================
-\section{\'Etude sur Binary AlphaDigits}
+\section{M\'ethodologie et Architectures}
+\label{sec:methodo}
+% ============================================================
+
+% ------------------------------------------------------------
+\subsection{Machine de Boltzmann Restreinte (RBM)}
+\label{sec:rbm_theory}
+% ------------------------------------------------------------
+
+\subsubsection{Mod\`ele d'\'energie et inf\'erence}
+
+Une RBM~\cite{smolensky1986} est un mod\`ele g\'en\'eratif param\'etr\'e par $\theta = \{W, a, b\}$, o\`u $W \in \mathbb{R}^{p \times q}$ est la matrice de poids, $a \in \mathbb{R}^p$ le biais des unit\'es visibles $v$, et $b \in \mathbb{R}^q$ le biais des unit\'es cach\'ees $h$. L'ind\'ependance conditionnelle des couches permet de calculer les probabilit\'es d'activation bidirectionnelles via la fonction sigmo\"ide $\sigma(\cdot)$~:
+
+\begin{equation}
+P(h_j = 1 | v) = \sigma\left(b_j + \sum_{i=1}^{p} v_i W_{ij}\right)
+\label{eq:ph_given_v}
+\end{equation}
+
+\begin{equation}
+P(v_i = 1 | h) = \sigma\left(a_i + \sum_{j=1}^{q} h_j W_{ij}\right)
+\label{eq:pv_given_h}
+\end{equation}
+
+\noindent\textit{Correspondance dans l'impl\'ementation~:}
+\begin{itemize}
+    \item \texttt{init\_RBM(p, q)}~: Initialise les param\`etres. $W$ suit une loi $\mathcal{N}(0, 0.01^2)$, $a$ et $b$ sont initialis\'es \`a 0.
+    \item \texttt{sigmoid(x)}~: Impl\'emente $\sigma(\cdot)$ avec un \texttt{np.clip(x, -500, 500)} pour \'eviter les instabilit\'es num\'eriques (overflow).
+    \item \texttt{entree\_sortie\_RBM}~: Impl\'emente l'\'Equation~\ref{eq:ph_given_v} sous forme vectoris\'ee (\texttt{V @ rbm["W"] + rbm["b"]}).
+    \item \texttt{sortie\_entree\_RBM}~: Impl\'emente l'\'Equation~\ref{eq:pv_given_h} sous forme vectoris\'ee (\texttt{H @ rbm["W"].T + rbm["a"]}).
+\end{itemize}
+
+\subsubsection{Apprentissage par Divergence Contrastive (CD-1)}
+
+L'optimisation non supervis\'ee vise \`a maximiser la log-vraisemblance~\cite{hinton2002}. Le gradient analytique \'etant intraitable, il est approxim\'e par l'algorithme CD-1. Pour un mini-batch d'entr\'ee $v^{(0)}$ de taille $bs$, les r\`egles de mise \`a jour avec le taux d'apprentissage $\eta$ sont~:
+
+\begin{equation}
+\Delta W = \frac{\eta}{bs}\left(v^{(0)T} P(h^{(0)}|v^{(0)}) - v^{(1)T} P(h^{(1)}|v^{(1)})\right)
+\label{eq:cd1_w}
+\end{equation}
+
+\begin{equation}
+\Delta a = \frac{\eta}{bs}\sum\left(v^{(0)} - v^{(1)}\right), \quad \Delta b = \frac{\eta}{bs}\sum\left(P(h^{(0)}|v^{(0)}) - P(h^{(1)}|v^{(1)})\right)
+\label{eq:cd1_ab}
+\end{equation}
+
+\noindent\textit{Correspondance dans l'impl\'ementation (\texttt{train\_RBM})~:}
+\begin{itemize}
+    \item \textbf{Phase positive~:} Calcul des probabilit\'es \texttt{h0\_prob} et \'echantillonnage de \texttt{h0\_sample} via une distribution de Bernoulli.
+    \item \textbf{Phase n\'egative~:} Reconstruction de \texttt{v1\_prob} \`a partir de \texttt{h0\_sample}, puis recalcul des probabilit\'es cach\'ees \texttt{h1\_prob}.
+    \item \textbf{Mise \`a jour~:} L'incr\'ementation de la matrice se fait vectoriellement~: \texttt{rbm["W"] += lr * (v0.T @ h0\_prob - v1\_prob.T @ h1\_prob) / bs}.
+    \item \textbf{M\'etrique~:} L'erreur de reconstruction (MSE) est calcul\'ee par \texttt{np.mean((v0 - v1\_prob) ** 2)} \`a la fin de chaque batch.
+\end{itemize}
+
+\subsubsection{G\'en\'eration par \'echantillonnage de Gibbs}
+
+La RBM agit comme un g\'en\'erateur stochastique en simulant une Cha\^ine de Markov Monte Carlo (MCMC). \`A partir d'un bruit initial $v^{(0)}$, l'\'echantillonneur de Gibbs alterne les inf\'erences pendant $k$ it\'erations~:
+
+\begin{equation}
+h^{(t)} \sim P(h|v^{(t-1)}) \quad \text{suivi de} \quad v^{(t)} \sim P(v|h^{(t)})
+\label{eq:gibbs}
+\end{equation}
+
+La distribution de $v^{(k)}$ converge asymptotiquement vers la distribution apprise par le mod\`ele.
+
+\noindent\textit{Correspondance dans l'impl\'ementation (\texttt{generer\_image\_RBM})~:}
+\begin{itemize}
+    \item \textbf{Initialisation~:} Les unit\'es visibles sont initialis\'ees avec un bruit uniforme binaire~: \texttt{v = (np.random.rand(n\_images, p) > 0.5)}.
+    \item \textbf{Boucle de Markov~:} La boucle \texttt{for \_ in range(n\_gibbs):} alterne s\'equentiellement les appels \`a \texttt{entree\_sortie\_RBM} et \texttt{sortie\_entree\_RBM}, en binarisant syst\'ematiquement les \'etats $h$ et $v$ par \'echantillonnage al\'eatoire (\texttt{< prob}).
+\end{itemize}
+
+% ------------------------------------------------------------
+\subsection{R\'eseau de Croyances Profondes (DBN) et Pr\'e-entra\^inement}
+\label{sec:dbn_theory}
+% ------------------------------------------------------------
+
+\subsubsection{Architecture par empilement}
+
+Un R\'eseau de Croyances Profondes (DBN)~\cite{hinton2006} est un mod\`ele g\'en\'eratif multicouche construit par l'empilement s\'equentiel de Machines de Boltzmann Restreintes. Structurellement, la couche cach\'ee de la RBM de niveau $\ell$ agit comme la couche visible de la RBM de niveau $\ell + 1$.
+
+\noindent\textit{Correspondance dans l'impl\'ementation (\texttt{init\_DBN})~:}
+\begin{itemize}
+    \item L'architecture globale est d\'efinie par un vecteur de dimensions (\texttt{layer\_sizes}).
+    \item Le DBN est mat\'erialis\'e par une liste contenant $L - 1$ structures RBM ind\'ependantes, instanci\'ees s\'equentiellement par \texttt{init\_RBM(layer\_sizes[i], layer\_sizes[i+1])}.
+\end{itemize}
+
+\subsubsection{Apprentissage glouton couche par couche}
+
+L'optimisation globale d'un mod\`ele profond \'etant particuli\`erement instable, le DBN b\'en\'eficie d'une proc\'edure de pr\'e-entra\^inement glouton ascendant~\cite{bengio2007}. Chaque RBM est entra\^in\'ee localement et ind\'ependamment via l'algorithme CD-1. Une fois la RBM de niveau $\ell$ converg\'ee, les probabilit\'es d'activation de ses unit\'es cach\'ees sont extraites et servent de donn\'ees d'entr\'ee $v^{(\ell+1)}$ pour l'entra\^inement de la RBM de niveau $\ell + 1$~:
+
+\begin{equation}
+v^{(\ell+1)} = P(h^{(\ell)} = 1 | v^{(\ell)}; W^{(\ell)}, b^{(\ell)})
+\label{eq:greedy}
+\end{equation}
+
+\noindent\textit{Correspondance dans l'impl\'ementation (\texttt{train\_DBN})~:}
+\begin{itemize}
+    \item \textbf{Boucle d'entra\^inement~:} Le processus it\`ere sur chaque RBM de la liste (\texttt{for i, rbm in enumerate(dbn)}).
+    \item \textbf{Optimisation locale~:} Fait appel \`a \texttt{train\_RBM} pour l'optimisation non supervis\'ee des poids locaux.
+    \item \textbf{Propagation ascendante~:} Met \`a jour l'espace de repr\'esentation via \texttt{current\_data = entree\_sortie\_RBM(rbm, current\_data)} pour constituer le jeu de donn\'ees de la couche suivante.
+\end{itemize}
+
+\subsubsection{G\'en\'eration par passe descendante}
+
+Le processus g\'en\'eratif d'un DBN s'op\`ere en deux phases~: une exploration stochastique dans l'espace latent le plus profond, suivie d'une projection d\'eterministe vers l'espace visible.
+
+\begin{itemize}
+    \item \textbf{Phase 1 (\'Equilibre MCMC)~:} Un \'echantillonnage de Gibbs altern\'e est ex\'ecut\'e exclusivement sur la RBM sup\'erieure pour \'echantillonner \`a partir de la distribution stationnaire latente.
+    \item \textbf{Phase 2 (Passe ancestrale)~:} L'information est propag\'ee de mani\`ere descendante \`a travers les poids transpos\'es $W^{(\ell)T}$ des couches inf\'erieures pour reconstruire l'image finale.
+\end{itemize}
+
+\noindent\textit{Correspondance dans l'impl\'ementation (\texttt{generer\_image\_DBN})~:}
+\begin{itemize}
+    \item \textbf{Niveau sup\'erieur~:} \'Echantillonnage de Gibbs sur le dernier bloc \texttt{top\_rbm = dbn[-1]} pendant \texttt{n\_gibbs} it\'erations avec binarisation stricte.
+    \item \textbf{Passe descendante~:} Une boucle invers\'ee (\texttt{range(len(dbn) - 2, -1, -1)}) propage l'information vers le bas. L'appel exclusif \`a \texttt{sortie\_entree\_RBM} (utilisation des probabilit\'es continues plut\^ot que des \'echantillons binaires) agit comme une r\'egularisation, g\'en\'erant des images plus lisses et moins bruit\'ees.
+\end{itemize}
+
+% ============================================================
+\section{Validation sur Binary AlphaDigits}
 \label{sec:alpha}
 % ============================================================
 
@@ -159,7 +297,9 @@ Nous fixons $q = 200$ et varions le nombre de caract\`eres utilis\'es pour l'ent
     \label{fig:rbm_nchars}
 \end{figure}
 
-Avec 3 caract\`eres, les images g\'en\'er\'ees capturent certaines caract\'eristiques structurelles des chiffres mais restent bruit\'ees en raison du tr\`es petit ensemble d'entra\^inement (117 \'echantillons). De mani\`ere int\'eressante, avec 36 caract\`eres (1\,404 \'echantillons), les images g\'en\'er\'ees apparaissent plus structur\'ees, avec des formes de caract\`eres plus nettes. Cela s'explique par le fait que plus de donn\'ees d'entra\^inement permettent au RBM d'apprendre des caract\'eristiques plus robustes, m\^eme si la distribution est plus diverse. Le volume accru de donn\'ees compense la complexit\'e ajout\'ee, soulignant que la qualit\'e du RBM d\'epend fortement d'un nombre suffisant d'\'echantillons d'entra\^inement.
+Avec 3 caract\`eres, les images g\'en\'er\'ees sont tr\`es bruit\'ees avec des pixels \'epars et peu de structure coh\'erente, en raison du tr\`es petit ensemble d'entra\^inement (117 \'echantillons). Avec 10 caract\`eres (390 \'echantillons), la qualit\'e s'am\'eliore nettement~: les images pr\'esentent des structures de blocs claires et des formes de caract\`eres reconnaissables, le volume de donn\'ees suppl\'ementaire permettant au RBM d'apprendre des caract\'eristiques plus robustes.
+
+Avec 36 caract\`eres (1\,404 \'echantillons), deux effets antagonistes coexistent. D'une part, le bruit pixel\'elis\'e disparait gr\^ace au volume de donn\'ees accru. D'autre part, la capacit\'e du mod\`ele ($q = 200$ unit\'es cach\'ees) devient insuffisante pour s\'eparer correctement les 36 modes de la distribution. Les images g\'en\'er\'ees apparaissent alors comme des \textbf{m\'elanges hybrides} de plusieurs caract\`eres --- des ``caract\`eres fant\^omes'' qui combinent des traits de diff\'erentes classes plut\^ot que de reproduire un caract\`ere distinct. Ce ph\'enom\`ene de \textit{m\'elange de modes} illustre la limitation fondamentale du RBM~: lorsque le nombre de classes d\'epasse la capacit\'e repr\'esentationnelle du mod\`ele, celui-ci moyenne entre les modes au lieu de les s\'eparer. Le meilleur compromis se situe autour de 10 caract\`eres, o\`u le RBM dispose \`a la fois de suffisamment de donn\'ees pour apprendre des caract\'eristiques robustes et de suffisamment de capacit\'e pour distinguer les classes.
 
 % ------------------------------------------------------------
 \subsection{Exp\'eriences DBN}
