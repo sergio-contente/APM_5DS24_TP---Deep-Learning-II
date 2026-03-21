@@ -6,4 +6,4 @@
 *.log
 *.out
 *.synctex.gz
-data/8
+data/*
