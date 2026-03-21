@@ -1,6 +1,5 @@
 import numpy as np
-import copy
-from rbm import sigmoid, init_RBM, entree_sortie_RBM
+from rbm import init_RBM, entree_sortie_RBM
 from dbn import init_DBN, train_DBN
 
 
@@ -26,6 +25,7 @@ def pretrain_DNN(dnn, data, epochs=100, lr=0.1, batch_size=128, verbose=True):
     if verbose:
         print(f"Pre-training {len(hidden_rbms)} hidden layer(s)...")
     train_DBN(hidden_rbms, data, epochs=epochs, lr=lr, batch_size=batch_size, verbose=verbose)
+    return dnn
 
 
 def calcul_softmax(rbm, data):
