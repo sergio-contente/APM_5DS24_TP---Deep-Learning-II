@@ -296,7 +296,7 @@ Hidden layers & \multicolumn{2}{c}{Test error (\%)} & \multicolumn{2}{c}{Train e
 2 & 3.31 & \textbf{2.60} & 0.22 & 0.01 \\
 3 & \textbf{2.84} & 3.39 & 0.12 & 0.07 \\
 4 & \textbf{2.65} & 7.69 & 0.07 & 5.37 \\
-5 & \textbf{2.69} & 89.64 & 0.05 & 89.73 \\
+5 & \textbf{2.63} & 88.65 & 0.06 & 88.76 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -318,9 +318,27 @@ We fix the architecture to 2 hidden layers and vary the number of neurons per la
     \label{fig:fig2}
 \end{figure}
 
-\textbf{Analysis.} The pre-trained network improves consistently with more neurons, reaching its best performance ($\approx 2.6\%$) at 700 neurons per layer. The randomly initialized network shows diminishing returns and plateaus around $\approx 2.8\%$ regardless of width.
+\begin{table}[H]
+\centering
+\caption{Error rates vs.\ number of neurons per hidden layer (2 hidden layers).}
+\label{tab:fig2}
+\begin{tabular}{ccccc}
+\toprule
+Neurons/layer & \multicolumn{2}{c}{Test error (\%)} & \multicolumn{2}{c}{Train error (\%)} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+ & Pre-trained & Random & Pre-trained & Random \\
+\midrule
+100 & 4.06 & \textbf{2.86} & 1.16 & 0.01 \\
+300 & 3.45 & \textbf{2.69} & 0.06 & 0.02 \\
+500 & 3.10 & \textbf{2.67} & 0.01 & 0.04 \\
+700 & \textbf{2.48} & 2.67 & 0.00 & 0.07 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-Pre-training benefits wider networks because the unsupervised phase learns increasingly rich feature representations with more hidden units. The randomly initialized network, lacking this structured initialization, cannot fully exploit the additional capacity. For our best model, \textbf{700 neurons per layer} is the best choice.
+\textbf{Analysis.} An interesting pattern emerges: for small and medium widths (100--500 neurons), the randomly initialized network actually outperforms the pre-trained one on the test set. However, the pre-trained network improves consistently with more neurons, and at 700 neurons it finally surpasses the random network (2.48\% vs.\ 2.67\%).
+
+This can be explained by examining the train errors: the pre-trained network with 100 neurons has a relatively high train error (1.16\%), suggesting that pre-training may impose a too-rigid initialization for small networks, limiting their flexibility during backpropagation. As width increases, the pre-trained network can better exploit the richer features learned during the unsupervised phase, eventually reaching 0\% train error and the best test error at 700 neurons. The random network plateaus at $\approx 2.67\%$ test error regardless of width beyond 300 neurons. For our best model, \textbf{700 neurons per layer} is optimal.
 
 \subsection{Figure 3: Error Rate vs.\ Number of Training Samples}
 
@@ -333,9 +351,30 @@ We fix the architecture to $[784, 200, 200, 10]$ and vary the number of training
     \label{fig:fig3}
 \end{figure}
 
-\textbf{Analysis.} Pre-training provides its greatest advantage in the \textbf{low-data regime}. With only 1000 training samples, the gap between pre-trained and random is substantial. As the dataset grows to 60,000 samples, both networks converge to similar performance.
+\begin{table}[H]
+\centering
+\caption{Error rates vs.\ number of training samples. Architecture: $[784, 200, 200, 10]$.}
+\label{tab:fig3}
+\begin{tabular}{ccccc}
+\toprule
+Samples & \multicolumn{2}{c}{Test error (\%)} & \multicolumn{2}{c}{Train error (\%)} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+ & Pre-trained & Random & Pre-trained & Random \\
+\midrule
+1,000  & \textbf{10.10} & 90.26 & 2.50  & 88.50 \\
+3,000  & \textbf{7.01}  & 19.25 & 1.43  & 15.17 \\
+7,000  & \textbf{6.20}  & 9.75  & 0.93  & 4.13  \\
+10,000 & \textbf{5.69}  & 7.86  & 0.69  & 2.81  \\
+60,000 & 3.31           & \textbf{2.60} & 0.22  & 0.01  \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-This is consistent with theory: unsupervised pre-training acts as a regularizer by learning the structure of the input distribution. When labeled data is scarce, this prior knowledge significantly helps generalization. With abundant labeled data, supervised training alone can learn comparable features. For our best model, we use \textbf{all 60,000 training samples}.
+\textbf{Analysis.} Pre-training provides its greatest advantage in the \textbf{low-data regime}. With only 1,000 training samples, the randomly initialized network is completely stuck at $\approx 90\%$ error (the loss remains at $\ln(10) \approx 2.30$ throughout training, i.e., random guessing), while the pre-trained network achieves 10.10\%. Even with 3,000 samples, the gap is dramatic: 7.01\% vs.\ 19.25\%.
+
+As the dataset grows, the gap narrows. With 10,000 samples, the random network begins to learn effectively (7.86\%), and at 60,000 samples it actually outperforms the pre-trained network (2.60\% vs.\ 3.31\%).
+
+This is consistent with theory: unsupervised pre-training acts as a regularizer by learning the structure of the input distribution. When labeled data is scarce, this prior knowledge is critical --- without it, the randomly initialized network cannot even escape the random-guessing plateau. With abundant labeled data, supervised training alone can discover comparable features, making pre-training unnecessary. For our best model, we use \textbf{all 60,000 training samples}.
 
 \subsection{Best Model Configuration}
 \label{sec:best_model}
