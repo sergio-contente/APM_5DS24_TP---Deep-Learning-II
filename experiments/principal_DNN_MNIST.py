@@ -1,9 +1,13 @@
 """Step 5: Final study on MNIST - Compare pre-trained vs random DNN."""
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+IMG_DIR = os.path.join(os.path.dirname(__file__), "..", "images")
+os.makedirs(IMG_DIR, exist_ok=True)
+
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-from utils import load_mnist
-from dnn import init_DNN, pretrain_DNN, retropropagation, test_DNN, entree_sortie_reseau
+from src import load_mnist, init_DNN, pretrain_DNN, retropropagation, test_DNN, entree_sortie_reseau
 
 # ============================================================
 # Hyperparameters
@@ -86,7 +90,7 @@ plt.legend()
 plt.grid(True, alpha=0.3)
 plt.xticks(n_layers_list)
 plt.tight_layout()
-plt.savefig("fig1_layers.png", dpi=150, bbox_inches="tight")
+plt.savefig(f"{IMG_DIR}/fig1_layers.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 # ============================================================
@@ -116,7 +120,7 @@ plt.legend()
 plt.grid(True, alpha=0.3)
 plt.xticks(neurons_list)
 plt.tight_layout()
-plt.savefig("fig2_neurons.png", dpi=150, bbox_inches="tight")
+plt.savefig(f"{IMG_DIR}/fig2_neurons.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 # ============================================================
@@ -153,7 +157,7 @@ plt.xscale("log")
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig("fig3_samples.png", dpi=150, bbox_inches="tight")
+plt.savefig(f"{IMG_DIR}/fig3_samples.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 # ============================================================

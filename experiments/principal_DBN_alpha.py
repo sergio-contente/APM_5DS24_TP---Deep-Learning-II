@@ -1,8 +1,12 @@
 """Step 4b: Validate DBN on Binary AlphaDigits."""
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+IMG_DIR = os.path.join(os.path.dirname(__file__), "..", "images")
+os.makedirs(IMG_DIR, exist_ok=True)
+
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import lire_alpha_digit
-from dbn import init_DBN, train_DBN, generer_image_DBN
+from src import lire_alpha_digit, init_DBN, train_DBN, generer_image_DBN
 
 # Load characters 0, 1, 2
 print("Loading Binary AlphaDigits (characters 0, 1, 2)...")
@@ -14,21 +18,21 @@ print("\n=== DBN with 1 hidden layer (320 -> 200) ===")
 dbn1 = init_DBN([320, 200])
 train_DBN(dbn1, data, epochs=100, lr=0.1, batch_size=32)
 generer_image_DBN(dbn1, n_gibbs=500, n_images=10, image_shape=(20, 16),
-                  save_path="dbn_alpha_1layer.png",
+                  save_path=f"{IMG_DIR}/dbn_alpha_1layer.png",
                   title="DBN Generated (1 layer: 320->200)")
 
 print("\n=== DBN with 2 hidden layers (320 -> 200 -> 100) ===")
 dbn2 = init_DBN([320, 200, 100])
 train_DBN(dbn2, data, epochs=100, lr=0.1, batch_size=32)
 generer_image_DBN(dbn2, n_gibbs=500, n_images=10, image_shape=(20, 16),
-                  save_path="dbn_alpha_2layers.png",
+                  save_path=f"{IMG_DIR}/dbn_alpha_2layers.png",
                   title="DBN Generated (2 layers: 320->200->100)")
 
 print("\n=== DBN with 3 hidden layers (320 -> 200 -> 100 -> 50) ===")
 dbn3 = init_DBN([320, 200, 100, 50])
 train_DBN(dbn3, data, epochs=100, lr=0.1, batch_size=32)
 generer_image_DBN(dbn3, n_gibbs=500, n_images=10, image_shape=(20, 16),
-                  save_path="dbn_alpha_3layers.png",
+                  save_path=f"{IMG_DIR}/dbn_alpha_3layers.png",
                   title="DBN Generated (3 layers: 320->200->100->50)")
 
 # --- Experiment 2: Effect of character diversity on DBN ---
@@ -40,7 +44,7 @@ for n_chars in [5, 10, 36]:
     dbn = init_DBN([320, 200, 100])
     train_DBN(dbn, data_div, epochs=100, lr=0.1, batch_size=32)
     generer_image_DBN(dbn, n_gibbs=500, n_images=10, image_shape=(20, 16),
-                      save_path=f"dbn_alpha_nchars{n_chars}.png",
+                      save_path=f"{IMG_DIR}/dbn_alpha_nchars{n_chars}.png",
                       title=f"DBN Generated ({n_chars} chars)")
 
 print("\nDone! Check generated images.")

@@ -1,5 +1,9 @@
 """Bonus: Compare generative models (RBM, DBN, VAE, GAN, Diffusion) on MNIST.
 All models have approximately the same number of parameters (~160k)."""
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+IMG_DIR = os.path.join(os.path.dirname(__file__), "..", "images")
+os.makedirs(IMG_DIR, exist_ok=True)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,9 +12,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
-from utils import load_mnist
-from rbm import init_RBM, train_RBM, entree_sortie_RBM, sortie_entree_RBM
-from dbn import init_DBN, train_DBN
+from src import load_mnist, init_RBM, train_RBM, entree_sortie_RBM, sortie_entree_RBM, init_DBN, train_DBN
 
 # ============================================================
 # Config
@@ -303,7 +305,7 @@ for row, (name, imgs) in enumerate(all_images.items()):
 
 plt.suptitle("Generative Models Comparison on MNIST (~160k params each)", fontsize=14, y=1.01)
 plt.tight_layout()
-plt.savefig("bonus_comparison.png", dpi=150, bbox_inches="tight")
+plt.savefig(f"{IMG_DIR}/bonus_comparison.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 print("\nDone! Saved to bonus_comparison.png")

@@ -1,6 +1,6 @@
 import numpy as np
-from rbm import init_RBM, entree_sortie_RBM
-from dbn import init_DBN, train_DBN
+from .rbm import init_RBM, entree_sortie_RBM
+from .dbn import init_DBN, train_DBN
 
 
 def init_DNN(layer_sizes):

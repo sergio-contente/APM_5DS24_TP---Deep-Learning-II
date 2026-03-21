@@ -3,9 +3,9 @@ import scipy.io as sio
 import struct
 import os
 
-DATA_DIR = os.path.dirname(os.path.abspath(__file__))
-MNIST_DIR = os.path.join(DATA_DIR, "Fichiers MNIST-20260320")
-ALPHA_PATH = os.path.join(DATA_DIR, "binaryalphadigs.mat")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MNIST_DIR = os.path.join(PROJECT_ROOT, "data", "Fichiers MNIST-20260320")
+ALPHA_PATH = os.path.join(PROJECT_ROOT, "data", "binaryalphadigs.mat")
 
 
 def lire_alpha_digit(characters):

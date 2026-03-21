@@ -12,11 +12,15 @@ Analysis of Figures 1-3:
 
 Best configuration: [784, 700, 700, 10], pre-trained, all training data.
 """
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+IMG_DIR = os.path.join(os.path.dirname(__file__), "..", "images")
+os.makedirs(IMG_DIR, exist_ok=True)
+
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-from utils import load_mnist
-from dnn import init_DNN, pretrain_DNN, retropropagation, test_DNN, entree_sortie_reseau
+from src import load_mnist, init_DNN, pretrain_DNN, retropropagation, test_DNN, entree_sortie_reseau
 
 # ============================================================
 # Load data
@@ -85,7 +89,7 @@ for i, idx in enumerate(sample_idx):
 plt.suptitle(f"Best Model {BEST_LAYERS} — Test Error: {err_test*100:.2f}%\n"
              "(green = true label, red = wrong prediction)", fontsize=12)
 plt.tight_layout()
-plt.savefig("softmax_best_model.png", dpi=150, bbox_inches="tight")
+plt.savefig(f"{IMG_DIR}/softmax_best_model.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 print(f"\nSaved to softmax_best_model.png")

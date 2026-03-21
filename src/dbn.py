@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from rbm import init_RBM, train_RBM, entree_sortie_RBM, sortie_entree_RBM
+from .rbm import init_RBM, train_RBM, entree_sortie_RBM, sortie_entree_RBM
 
 
 def init_DBN(layer_sizes):
