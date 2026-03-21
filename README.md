@@ -173,6 +173,17 @@ python experiments/principal_bonus.py
 
 Or open `notebooks/bonus_comparison.ipynb` in **Google Colab** (recommended for GPU access) and run all cells.
 
+## :page_facing_up: Report
+
+The full project report is available at [`report/magalhaes-TP-DNN.pdf`](report/magalhaes-TP-DNN.pdf). It covers:
+
+- Detailed analysis of RBMs on Binary AlphaDigits (varying hidden units and character diversity)
+- DBN study for image generation (impact of depth and data diversity)
+- Systematic comparison between pre-trained and randomly initialized DNNs on MNIST across three axes: depth, width, and training set size
+- Bonus comparison of five generative models (RBM, DBN, VAE, GAN, DDPM)
+
+> The original assignment is available at [`report/TP_DNN.pdf`](report/TP_DNN.pdf).
+
 ## :books: References
 
 - Hinton, G. E. (2002). *Training Products of Experts by Minimizing Contrastive Divergence*. Neural Computation.

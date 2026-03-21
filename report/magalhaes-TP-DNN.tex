@@ -34,10 +34,10 @@ Institut Polytechnique de Paris}
 \maketitle
 
 \begin{abstract}
-Ce rapport pr\'esente une impl\'ementation from scratch en NumPy de Machines de Boltzmann Restreintes (RBM), de R\'eseaux de Croyance Profonds (DBN) et de R\'eseaux de Neurones Profonds (DNN) pour la classification de chiffres manuscrits sur MNIST.
-Nous impl\'ementons un pr\'e-entra\^inement non supervis\'e par entra\^inement glouton couche par couche de RBM, suivi d'un ajustement supervis\'e par r\'etropropagation avec une couche de classification softmax.
-Une comparaison syst\'ematique entre les r\'eseaux pr\'e-entra\^in\'es et initialis\'es al\'eatoirement est r\'ealis\'ee selon trois axes~: la profondeur du r\'eseau, la largeur des couches et la taille de l'ensemble d'entra\^inement.
-En bonus, nous comparons cinq mod\`eles g\'en\'eratifs (RBM, DBN, VAE, GAN, DDPM) sous un budget de param\`etres similaire sur MNIST.
+Ce rapport pr\'esente une impl\'ementation from scratch en NumPy de Machines de Boltzmann Restreintes (RBM)~\cite{smolensky1986}, de R\'eseaux de Croyance Profonds (DBN)~\cite{hinton2006} et de R\'eseaux de Neurones Profonds (DNN) pour la classification de chiffres manuscrits sur MNIST~\cite{lecun1998}.
+Nous impl\'ementons un pr\'e-entra\^inement non supervis\'e par entra\^inement glouton couche par couche de RBM~\cite{bengio2007}, suivi d'un ajustement supervis\'e par r\'etropropagation avec une couche de classification softmax.
+Une comparaison syst\'ematique entre les r\'eseaux pr\'e-entra\^in\'es et initialis\'es al\'eatoirement est r\'ealis\'ee selon trois axes~: la profondeur du r\'eseau, la largeur des couches et la taille de l'ensemble d'entra\^inement~\cite{erhan2010}.
+En bonus, nous comparons cinq mod\`eles g\'en\'eratifs (RBM, DBN, VAE~\cite{kingma2014}, GAN~\cite{goodfellow2014}, DDPM~\cite{ho2020}) sous un budget de param\`etres similaire sur MNIST.
 \end{abstract}
 
 \newpage
@@ -49,7 +49,7 @@ En bonus, nous comparons cinq mod\`eles g\'en\'eratifs (RBM, DBN, VAE, GAN, DDPM
 % ============================================================
 
 L'objectif de ce projet est d'impl\'ementer un r\'eseau de neurones profond pr\'e-entra\^in\'e pour la classification de chiffres manuscrits et d'\'evaluer l'apport du pr\'e-entra\^inement non supervis\'e par rapport \`a une initialisation al\'eatoire.
-L'impl\'ementation est enti\`erement r\'ealis\'ee en NumPy, suivant l'architecture o\`u un RBM est la brique de base d'un DBN, qui fournit \`a son tour les poids pr\'e-entra\^in\'es pour un DNN avec une couche de classification softmax suppl\'ementaire.
+L'impl\'ementation est enti\`erement r\'ealis\'ee en NumPy, suivant l'architecture o\`u un RBM~\cite{smolensky1986} est la brique de base d'un DBN~\cite{hinton2006}, qui fournit \`a son tour les poids pr\'e-entra\^in\'es pour un DNN avec une couche de classification softmax suppl\'ementaire.
 
 Nous proc\'edons en trois \'etapes~:
 \begin{enumerate}
@@ -97,7 +97,7 @@ Nous entra\^inons sur les caract\`eres 0, 1 et 2 (117 \'echantillons au total). 
 
 \subsubsection{Effet du nombre d'unit\'es cach\'ees}
 
-Nous entra\^inons des RBM avec $q \in \{50, 100, 200, 300\}$ unit\'es cach\'ees (100 \'epoques, $\eta = 0.1$, taille de batch 32) et g\'en\'erons des images via 500 pas de Gibbs.
+Nous entra\^inons des RBM avec $q \in \{50, 100, 200, 300\}$ unit\'es cach\'ees (100 \'epoques, $\eta = 0.1$, taille de batch 32) en utilisant l'algorithme de Divergence Contrastive (CD-1)~\cite{hinton2002} et g\'en\'erons des images via 500 pas de Gibbs.
 
 \begin{figure}[H]
     \centering
@@ -168,7 +168,7 @@ Avec 3 caract\`eres, les images g\'en\'er\'ees capturent certaines caract\'erist
 
 \subsubsection{Effet de la profondeur du r\'eseau}
 
-Nous entra\^inons des DBN avec 1, 2 et 3 couches cach\'ees sur les caract\`eres 0, 1, 2.
+Nous entra\^inons des DBN~\cite{hinton2006} avec 1, 2 et 3 couches cach\'ees sur les caract\`eres 0, 1, 2, en utilisant l'entra\^inement glouton couche par couche~\cite{bengio2007}.
 
 \begin{figure}[H]
     \centering
@@ -268,7 +268,7 @@ Couches cach\'ees & \multicolumn{2}{c}{Erreur test (\%)} & \multicolumn{2}{c}{Er
 
 \textbf{Analyse.} Avec 2 couches cach\'ees, le r\'eseau al\'eatoire surpasse l\'eg\`erement le r\'eseau pr\'e-entra\^in\'e (2.60\,\% contre 3.31\,\%). Cependant, lorsque la profondeur augmente, le r\'eseau initialis\'e al\'eatoirement se d\'egrade de mani\`ere dramatique~: \`a 4 couches il atteint 7.69\,\% d'erreur, et \`a 5 couches la perte reste bloqu\'ee \`a $\approx 2.30$ ($= \ln 10$, c'est-\`a-dire une pr\'ediction al\'eatoire) pendant les 200 \'epoques d'entra\^inement, donnant $\approx 90\,\%$ d'erreur.
 
-Ceci est une d\'emonstration classique du \textbf{probl\`eme du gradient \'evanescent}~: dans les r\'eseaux profonds initialis\'es al\'eatoirement, les gradients deviennent extr\^emement petits dans les couches ant\'erieures, emp\^echant tout apprentissage. Le plateau de la perte \`a $\ln(10)$ confirme que le r\'eseau produit des probabilit\'es softmax uniformes. En revanche, le r\'eseau pr\'e-entra\^in\'e maintient des performances stables et m\^eme l\'eg\`erement am\'elior\'ees lorsque la profondeur augmente (2.65\,\% \`a 4 couches), car le pr\'e-entra\^inement par RBM place les poids dans une r\'egion favorable de l'espace des param\`etres o\`u les gradients circulent efficacement.
+Ceci est une d\'emonstration classique du \textbf{probl\`eme du gradient \'evanescent}~\cite{erhan2010}~: dans les r\'eseaux profonds initialis\'es al\'eatoirement, les gradients deviennent extr\^emement petits dans les couches ant\'erieures, emp\^echant tout apprentissage. Le plateau de la perte \`a $\ln(10)$ confirme que le r\'eseau produit des probabilit\'es softmax uniformes. En revanche, le r\'eseau pr\'e-entra\^in\'e maintient des performances stables et m\^eme l\'eg\`erement am\'elior\'ees lorsque la profondeur augmente (2.65\,\% \`a 4 couches), car le pr\'e-entra\^inement par RBM place les poids dans une r\'egion favorable de l'espace des param\`etres o\`u les gradients circulent efficacement.
 
 Le point cl\'e est que le \textbf{pr\'e-entra\^inement est essentiel pour les architectures profondes} (plus de 2--3 couches cach\'ees). Pour les r\'eseaux peu profonds (2 couches), l'initialisation al\'eatoire est comp\'etitive. Pour notre meilleur mod\`ele, nous s\'electionnons \textbf{2 couches cach\'ees} car les r\'eseaux plus profonds n'am\'eliorent pas l'erreur de test malgr\'e le pr\'e-entra\^inement.
 
@@ -339,7 +339,7 @@ Nous fixons l'architecture \`a $[784, 200, 200, 10]$ et varions le nombre d'\'ec
 
 \`A mesure que le jeu de donn\'ees cro\^it, l'\'ecart se r\'eduit. Avec 10\,000 \'echantillons, le r\'eseau al\'eatoire commence \`a apprendre efficacement (7.86\,\%), et \`a 60\,000 \'echantillons il surpasse en fait le r\'eseau pr\'e-entra\^in\'e (2.60\,\% contre 3.31\,\%).
 
-Cela est coh\'erent avec la th\'eorie~: le pr\'e-entra\^inement non supervis\'e agit comme un r\'egulariseur en apprenant la structure de la distribution des entr\'ees. Lorsque les donn\'ees \'etiquet\'ees sont rares, cette connaissance a priori est critique; sans elle, le r\'eseau initialis\'e al\'eatoirement ne peut m\^eme pas \'echapper au plateau de pr\'ediction al\'eatoire. Avec des donn\'ees \'etiquet\'ees abondantes, l'entra\^inement supervis\'e seul peut d\'ecouvrir des caract\'eristiques comparables, rendant le pr\'e-entra\^inement superflu. Pour notre meilleur mod\`ele, nous utilisons \textbf{les 60\,000 \'echantillons d'entra\^inement}.
+Cela est coh\'erent avec la th\'eorie~\cite{erhan2010}~: le pr\'e-entra\^inement non supervis\'e agit comme un r\'egulariseur en apprenant la structure de la distribution des entr\'ees. Lorsque les donn\'ees \'etiquet\'ees sont rares, cette connaissance a priori est critique; sans elle, le r\'eseau initialis\'e al\'eatoirement ne peut m\^eme pas \'echapper au plateau de pr\'ediction al\'eatoire. Avec des donn\'ees \'etiquet\'ees abondantes, l'entra\^inement supervis\'e seul peut d\'ecouvrir des caract\'eristiques comparables, rendant le pr\'e-entra\^inement superflu. Pour notre meilleur mod\`ele, nous utilisons \textbf{les 60\,000 \'echantillons d'entra\^inement}.
 
 \subsection{Configuration du meilleur mod\`ele}
 \label{sec:best_model}
@@ -373,9 +373,9 @@ En bonus, nous comparons cinq mod\`eles g\'en\'eratifs entra\^in\'es sur MNIST a
 \begin{enumerate}
     \item \textbf{RBM} ($784 \to 200$, $\sim$158k param.)~: 100 \'epoques de CD-1, g\'en\'eration via 1\,000 pas de Gibbs.
     \item \textbf{DBN} ($784 \to 200 \to 100$, $\sim$178k param.)~: Entra\^inement glouton couche par couche, g\'en\'eration via Gibbs au sommet + propagation descendante.
-    \item \textbf{VAE} ($784 \to 200 \to 100 \to 20 \to 100 \to 200 \to 784$, $\sim$161k param.)~: Auto-encodeur variationnel avec astuce de reparam\'etrisation, entra\^in\'e pendant 200 \'epoques avec Adam.
-    \item \textbf{GAN} (G\'en\'erateur~: $64 \to 256 \to 512 \to 784$ avec BatchNorm~; Discriminateur~: $784 \to 512 \to 256 \to 1$ avec Dropout, $\sim$210k param. au total)~: Entra\^in\'e pendant 200 \'epoques avec label smoothing.
-    \item \textbf{DDPM} (Mod\`ele de diffusion probabiliste par d\'ebruitage, $\sim$169k param.)~: D\'ebruiteur MLP simple avec embeddings temporels sinuso\"idaux, connexions r\'esiduelles, activations GELU, $T = 500$ \'etapes de diffusion, 200 \'epoques.
+    \item \textbf{VAE}~\cite{kingma2014} ($784 \to 200 \to 100 \to 20 \to 100 \to 200 \to 784$, $\sim$161k param.)~: Auto-encodeur variationnel avec astuce de reparam\'etrisation, entra\^in\'e pendant 200 \'epoques avec Adam.
+    \item \textbf{GAN}~\cite{goodfellow2014} (G\'en\'erateur~: $64 \to 256 \to 512 \to 784$ avec BatchNorm~; Discriminateur~: $784 \to 512 \to 256 \to 1$ avec Dropout, $\sim$210k param. au total)~: Entra\^in\'e pendant 200 \'epoques avec label smoothing.
+    \item \textbf{DDPM}~\cite{ho2020} (Mod\`ele de diffusion probabiliste par d\'ebruitage, $\sim$169k param.)~: D\'ebruiteur MLP simple avec embeddings temporels sinuso\"idaux, connexions r\'esiduelles, activations GELU, $T = 500$ \'etapes de diffusion, 200 \'epoques.
 \end{enumerate}
 
 Les VAE, GAN et DDPM sont impl\'ement\'es en PyTorch et entra\^in\'es sur Google Colab avec acc\'el\'eration GPU. Le RBM et le DBN utilisent notre impl\'ementation NumPy. Le notebook de comparaison est autonome et disponible \`a \texttt{notebooks/bonus\_comparison.ipynb}.
@@ -391,9 +391,9 @@ Les VAE, GAN et DDPM sont impl\'ement\'es en PyTorch et entra\^in\'es sur Google
 \textbf{Analyse.}
 \begin{itemize}
     \item Le \textbf{RBM} et le \textbf{DBN} produisent des chiffres reconnaissables mais bruit\'es d'apparence binaire, coh\'erent avec leur nature stochastique binaire.
-    \item Le \textbf{VAE} g\'en\`ere des chiffres lisses et plausibles avec une bonne diversit\'e, b\'en\'eficiant de l'espace latent continu et de l'objectif de reconstruction + KL.
-    \item Le \textbf{GAN} produit les images les plus nettes globalement, car l'entra\^inement adversarial optimise directement le r\'ealisme. Cependant, l'effondrement de modes peut parfois r\'eduire la diversit\'e.
-    \item Le \textbf{DDPM} produit des chiffres raisonnables mais moins nets. C'est une limitation connue de l'utilisation d'une architecture MLP simple pour le d\'ebruitage~: le DDPM standard repose sur des architectures U-Net avec des convolutions spatiales et des m\'ecanismes d'attention, qui ne peuvent pas \^etre r\'epliqu\'ees dans le budget de $\sim$160k param\`etres. Le MLP peine \`a d\'ebruiter efficacement des vecteurs de dimension 784 compar\'e aux architectures convolutives qui exploitent la structure spatiale.
+    \item Le \textbf{VAE}~\cite{kingma2014} g\'en\`ere des chiffres lisses et plausibles avec une bonne diversit\'e, b\'en\'eficiant de l'espace latent continu et de l'objectif de reconstruction + KL.
+    \item Le \textbf{GAN}~\cite{goodfellow2014} produit les images les plus nettes globalement, car l'entra\^inement adversarial optimise directement le r\'ealisme. Cependant, l'effondrement de modes peut parfois r\'eduire la diversit\'e.
+    \item Le \textbf{DDPM}~\cite{ho2020} produit des chiffres raisonnables mais moins nets. C'est une limitation connue de l'utilisation d'une architecture MLP simple pour le d\'ebruitage~: le DDPM standard repose sur des architectures U-Net avec des convolutions spatiales et des m\'ecanismes d'attention, qui ne peuvent pas \^etre r\'epliqu\'ees dans le budget de $\sim$160k param\`etres. Le MLP peine \`a d\'ebruiter efficacement des vecteurs de dimension 784 compar\'e aux architectures convolutives qui exploitent la structure spatiale.
 \end{itemize}
 
 Cette comparaison illustre le compromis entre les familles de mod\`eles~: les RBM/DBN sont simples et th\'eoriquement fond\'es mais limit\'es en qualit\'e de sortie~; les VAE offrent un bon \'equilibre entre qualit\'e et stabilit\'e d'entra\^inement~; les GAN excellent en nettet\'e mais sont plus difficiles \`a entra\^iner~; et les mod\`eles de diffusion n\'ecessitent des architectures sp\'ecialis\'ees pour atteindre leur plein potentiel.
@@ -405,7 +405,7 @@ Cette comparaison illustre le compromis entre les familles de mod\`eles~: les RB
 Ce projet a d\'emontr\'e le pipeline complet allant de l'apprentissage non supervis\'e de caract\'eristiques avec les RBM \`a la classification supervis\'ee avec les DNN sur MNIST. Les principaux r\'esultats sont~:
 
 \begin{enumerate}
-    \item \textbf{Le pr\'e-entra\^inement att\'enue le probl\`eme du gradient \'evanescent} dans les r\'eseaux profonds, permettant l'entra\^inement efficace d'architectures avec 4--5 couches cach\'ees qui \'echoueraient autrement avec une initialisation al\'eatoire.
+    \item \textbf{Le pr\'e-entra\^inement att\'enue le probl\`eme du gradient \'evanescent}~\cite{erhan2010} dans les r\'eseaux profonds, permettant l'entra\^inement efficace d'architectures avec 4--5 couches cach\'ees qui \'echoueraient autrement avec une initialisation al\'eatoire.
     \item \textbf{Pour les r\'eseaux peu profonds (2 couches), l'avantage du pr\'e-entra\^inement est marginal} lorsque suffisamment de donn\'ees \'etiquet\'ees sont disponibles, mais devient significatif dans le r\'egime de donn\'ees limit\'ees.
     \item \textbf{Les r\'eseaux pr\'e-entra\^in\'es passent mieux \`a l'\'echelle en largeur}~: augmenter les unit\'es cach\'ees \`a 700 donne une am\'elioration constante pour les r\'eseaux pr\'e-entra\^in\'es, tandis que les r\'eseaux initialis\'es al\'eatoirement plafonnent plus t\^ot.
     \item La \textbf{configuration optimale} pour la classification MNIST est $[784, 700, 700, 10]$ avec pr\'e-entra\^inement, atteignant $2.51\,\%$ d'erreur de test.
@@ -413,5 +413,56 @@ Ce projet a d\'emontr\'e le pipeline complet allant de l'apprentissage non super
 \end{enumerate}
 
 Tout le code est impl\'ement\'e from scratch en NumPy (partie principale) et PyTorch (bonus uniquement), organis\'e dans un package modulaire \texttt{src/} avec des scripts d'exp\'eriences reproductibles dans \texttt{experiments/}.
+
+% ============================================================
+\begin{thebibliography}{9}
+% ============================================================
+
+\bibitem{hinton2002}
+Hinton, G.~E. (2002).
+\textit{Training Products of Experts by Minimizing Contrastive Divergence}.
+Neural Computation, 14(8), 1771--1800.
+
+\bibitem{hinton2006}
+Hinton, G.~E., Osindero, S. et Teh, Y.~W. (2006).
+\textit{A Fast Learning Algorithm for Deep Belief Nets}.
+Neural Computation, 18(7), 1527--1554.
+
+\bibitem{erhan2010}
+Erhan, D., Bengio, Y., Courville, A., Manzagol, P.-A., Vincent, P. et Bengio, S. (2010).
+\textit{Why Does Unsupervised Pre-training Help Deep Learning?}
+Journal of Machine Learning Research, 11, 625--660.
+
+\bibitem{lecun1998}
+LeCun, Y., Bottou, L., Bengio, Y. et Haffner, P. (1998).
+\textit{Gradient-Based Learning Applied to Document Recognition}.
+Proceedings of the IEEE, 86(11), 2278--2324.
+
+\bibitem{kingma2014}
+Kingma, D.~P. et Welling, M. (2014).
+\textit{Auto-Encoding Variational Bayes}.
+International Conference on Learning Representations (ICLR).
+
+\bibitem{goodfellow2014}
+Goodfellow, I., Pouget-Abadie, J., Mirza, M., Xu, B., Warde-Farley, D., Ozair, S., Courville, A. et Bengio, Y. (2014).
+\textit{Generative Adversarial Nets}.
+Advances in Neural Information Processing Systems (NeurIPS), 27.
+
+\bibitem{ho2020}
+Ho, J., Jain, A. et Abbeel, P. (2020).
+\textit{Denoising Diffusion Probabilistic Models}.
+Advances in Neural Information Processing Systems (NeurIPS), 33.
+
+\bibitem{bengio2007}
+Bengio, Y., Lamblin, P., Popovici, D. et Larochelle, H. (2007).
+\textit{Greedy Layer-Wise Training of Deep Networks}.
+Advances in Neural Information Processing Systems (NeurIPS), 19.
+
+\bibitem{smolensky1986}
+Smolensky, P. (1986).
+\textit{Information Processing in Dynamical Systems: Foundations of Harmony Theory}.
+Dans D.~E. Rumelhart et J.~L. McClelland (dir.), Parallel Distributed Processing, vol.~1, chap.~6, p.~194--281. MIT Press.
+
+\end{thebibliography}
 
 \end{document}
