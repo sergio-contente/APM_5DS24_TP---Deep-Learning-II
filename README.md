@@ -43,7 +43,7 @@ APM_5DS24_TP---Deep-Learning-II/
 ├── README.md
 ├── requirements.txt
 ├── report/
-│   ├── magalhaes-TP-DNN.pdf         # Final report
+│   ├── magalhaes_yang-TP-DNN.pdf         # Final report
 │   └── TP_DNN.pdf                   # Assignment description
 ├── src/                             # Source modules (pure NumPy)
 │   ├── __init__.py
@@ -175,7 +175,7 @@ Or open `notebooks/bonus_comparison.ipynb` in **Google Colab** (recommended for 
 
 ## :page_facing_up: Report
 
-The full project report is available at [`report/magalhaes-TP-DNN.pdf`](report/magalhaes-TP-DNN.pdf). It covers:
+The full project report is available at [`report/magalhaes_yang-TP-DNN.pdf`](report/magalhaes_yang-TP-DNN.pdf). It covers:
 
 - Detailed analysis of RBMs on Binary AlphaDigits (varying hidden units and character diversity)
 - DBN study for image generation (impact of depth and data diversity)
