@@ -26,7 +26,7 @@ def run_experiment(layer_sizes, X_tr, Y_tr, X_te, Y_te,
                    rbm_epochs=RBM_EPOCHS, bp_epochs=BACKPROP_EPOCHS,
                    lr=LR, batch_size=BATCH_SIZE):
     """Run one comparison: pretrained DNN vs random DNN.
-    Returns (error_pretrained, error_random)."""
+    Returns (err_pretrained_test, err_random_test, err_pretrained_train, err_random_train, dnn1, dnn2)."""
     print(f"\n{'='*60}")
     print(f"Architecture: {layer_sizes}, Train samples: {X_tr.shape[0]}")
     print(f"{'='*60}")
@@ -48,12 +48,15 @@ def run_experiment(layer_sizes, X_tr, Y_tr, X_te, Y_te,
     print("\n--- Training DNN2 (random + backprop) ---")
     retropropagation(dnn2, X_tr, Y_tr, epochs=bp_epochs, lr=lr, batch_size=batch_size, verbose=True)
 
-    # 6. Test both
-    err1 = test_DNN(dnn1, X_te, Y_te)
-    err2 = test_DNN(dnn2, X_te, Y_te)
-    print(f"\nResults: Pre-trained error = {err1*100:.2f}%, Random error = {err2*100:.2f}%")
+    # 6. Evaluate on train and test
+    err1_test = test_DNN(dnn1, X_te, Y_te)
+    err2_test = test_DNN(dnn2, X_te, Y_te)
+    err1_train = test_DNN(dnn1, X_tr, Y_tr)
+    err2_train = test_DNN(dnn2, X_tr, Y_tr)
+    print(f"\nResults (test):  Pre-trained = {err1_test*100:.2f}%, Random = {err2_test*100:.2f}%")
+    print(f"Results (train): Pre-trained = {err1_train*100:.2f}%, Random = {err2_train*100:.2f}%")
 
-    return err1, err2, dnn1, dnn2
+    return err1_test, err2_test, err1_train, err2_train, dnn1, dnn2
 
 
 # ============================================================
@@ -69,7 +72,7 @@ errors_random_fig1 = []
 
 for n_layers in n_layers_list:
     layers = [784] + [200] * n_layers + [10]
-    err_p, err_r, _, _ = run_experiment(layers, X_train, Y_train, X_test, Y_test)
+    err_p, err_r, _, _, _, _ = run_experiment(layers, X_train, Y_train, X_test, Y_test)
     errors_pretrained_fig1.append(err_p * 100)
     errors_random_fig1.append(err_r * 100)
 
@@ -99,7 +102,7 @@ errors_random_fig2 = []
 
 for n_neurons in neurons_list:
     layers = [784, n_neurons, n_neurons, 10]
-    err_p, err_r, _, _ = run_experiment(layers, X_train, Y_train, X_test, Y_test)
+    err_p, err_r, _, _, _, _ = run_experiment(layers, X_train, Y_train, X_test, Y_test)
     errors_pretrained_fig2.append(err_p * 100)
     errors_random_fig2.append(err_r * 100)
 
@@ -136,7 +139,7 @@ for n_samples in n_samples_list:
         X_sub = X_train
         Y_sub = Y_train
     layers = [784, 200, 200, 10]
-    err_p, err_r, _, _ = run_experiment(layers, X_sub, Y_sub, X_test, Y_test)
+    err_p, err_r, _, _, _, _ = run_experiment(layers, X_sub, Y_sub, X_test, Y_test)
     errors_pretrained_fig3.append(err_p * 100)
     errors_random_fig3.append(err_r * 100)
 
@@ -154,50 +157,6 @@ plt.savefig("fig3_samples.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 # ============================================================
-# Softmax output probabilities visualization
-# ============================================================
-print("\n" + "#" * 60)
-print("Softmax output probabilities for sample images")
-print("#" * 60)
-
-# Train a final model with best config
-print("\nTraining final model [784, 300, 300, 10] with all data...")
-_, _, dnn_best, _ = run_experiment([784, 300, 300, 10], X_train, Y_train, X_test, Y_test)
-
-# Show softmax outputs for 10 test images
-fig, axes = plt.subplots(2, 5, figsize=(15, 6))
-sample_idx = np.random.choice(X_test.shape[0], 10, replace=False)
-
-for i, idx in enumerate(sample_idx):
-    ax = axes[i // 5, i % 5]
-    activations = entree_sortie_reseau(dnn_best, X_test[idx:idx+1])
-    probs = activations[-1][0]
-    true_label = np.argmax(Y_test[idx])
-    pred_label = np.argmax(probs)
-
-    ax.bar(range(10), probs, color=["green" if j == true_label else "gray" for j in range(10)])
-    ax.set_title(f"True: {true_label}, Pred: {pred_label}", fontsize=9)
-    ax.set_xticks(range(10))
-    ax.set_ylim(0, 1)
-
-plt.suptitle("Softmax Output Probabilities (green = true label)")
-plt.tight_layout()
-plt.savefig("softmax_probs.png", dpi=150, bbox_inches="tight")
-plt.show()
-
-# Show corresponding images
-fig, axes = plt.subplots(2, 5, figsize=(10, 4))
-for i, idx in enumerate(sample_idx):
-    ax = axes[i // 5, i % 5]
-    ax.imshow(X_test[idx].reshape(28, 28), cmap="gray")
-    ax.set_title(f"Label: {np.argmax(Y_test[idx])}", fontsize=9)
-    ax.axis("off")
-plt.suptitle("Test Images")
-plt.tight_layout()
-plt.savefig("test_images.png", dpi=150, bbox_inches="tight")
-plt.show()
-
-# ============================================================
 # Summary
 # ============================================================
 print("\n" + "=" * 60)
@@ -212,6 +171,3 @@ for nn, ep, er in zip(neurons_list, errors_pretrained_fig2, errors_random_fig2):
 print("\nFigure 3 (samples):")
 for ns, ep, er in zip(n_samples_list, errors_pretrained_fig3, errors_random_fig3):
     print(f"  {ns} samples: pretrained={ep:.2f}%, random={er:.2f}%")
-
-final_err = test_DNN(dnn_best, X_test, Y_test)
-print(f"\nBest model error rate: {final_err*100:.2f}%")

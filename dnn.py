@@ -103,7 +103,10 @@ def retropropagation(dnn, data, labels, epochs=200, lr=0.1, batch_size=128, verb
                 dnn[l]["W"] -= lr * grad_W
                 dnn[l]["b"] -= lr * grad_b
 
-        avg_loss = epoch_loss / n_batches
+        # Post-update loss (single forward pass on full dataset)
+        activations = entree_sortie_reseau(dnn, data)
+        probs = activations[-1]
+        avg_loss = -np.mean(np.sum(labels * np.log(probs + 1e-10), axis=1))
         losses.append(avg_loss)
         if verbose and (epoch + 1) % 10 == 0:
             print(f"  Backprop Epoch {epoch+1}/{epochs} - Loss: {avg_loss:.6f}")
