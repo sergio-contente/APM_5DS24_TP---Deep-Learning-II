@@ -11,6 +11,10 @@
 \usepackage[a4paper,margin=2cm]{geometry}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage[T1]{fontenc} % allow word breaks at hyphens
+\sloppy 
+\usepackage{xurl} % allow line breaks in URLs
+\renewcommand{\texttt}[1]{\urlstyle{tt}\nolinkurl{#1}}                
 
 \lstset{
   basicstyle=\ttfamily\small,
@@ -375,9 +379,9 @@ Nous passons maintenant \`a l'\'etude principale~: comparer un DNN pr\'e-entra\^
 
 Les images MNIST sont binaras\'ees au seuil 127. Pour chaque exp\'erience, deux DNN identiques sont cr\'e\'es. L'un est pr\'e-entra\^in\'e par entra\^inement glouton couche par couche de RBM (100 \'epoques par couche), puis ajust\'e par r\'etropropagation (200 \'epoques). L'autre est entra\^in\'e \`a partir d'une initialisation al\'eatoire avec r\'etropropagation uniquement (200 \'epoques). Les deux utilisent un taux d'apprentissage $\eta = 0.1$ et une taille de batch de 128. Le taux d'erreur de classification sur l'ensemble de test est rapport\'e.
 
-Trois exp\'eriences sont r\'ealis\'ees conform\'ement au sujet~:
+Trois exp\'eriences sont r\'ealis\'ees conform\'ement au sujet. Nous analysons successivement l'évolution de la précision du modèle en fonction de la complexité architecturale à travers la profondeur (nombre de couches) et la largeur (nombre de neurones par couche) du réseau, ainsi que sa robustesse face à la variation du volume de données d'apprentissage disponibles. Chaque test est réalisé en maintenant les autres paramètres constants afin de garantir la pertinence de la comparaison et d'identifier les régimes où le pré-entraînement apporte le gain de performance le plus significatif.
 
-\subsection{Figure 1~: Taux d'erreur en fonction du nombre de couches cach\'ees}
+\subsection{Exp\'erience 1~: Taux d'erreur en fonction du nombre de couches cach\'ees}
 
 Nous fixons le nombre de neurones par couche cach\'ee \`a 200 et varions le nombre de couches cach\'ees de 2 \`a 5. L'architecture est $[784, 200, \ldots, 200, 10]$.
 
@@ -412,7 +416,7 @@ Ceci est une d\'emonstration classique du \textbf{probl\`eme du gradient \'evane
 
 Le point cl\'e est que le \textbf{pr\'e-entra\^inement est essentiel pour les architectures profondes} (plus de 2--3 couches cach\'ees). Pour les r\'eseaux peu profonds (2 couches), l'initialisation al\'eatoire est comp\'etitive. Pour notre meilleur mod\`ele, nous s\'electionnons \textbf{2 couches cach\'ees} car les r\'eseaux plus profonds n'am\'eliorent pas l'erreur de test malgr\'e le pr\'e-entra\^inement.
 
-\subsection{Figure 2~: Taux d'erreur en fonction du nombre de neurones par couche}
+\subsection{Exp\'erience 2~: Taux d'erreur en fonction du nombre de neurones par couche}
 
 Nous fixons l'architecture \`a 2 couches cach\'ees et varions le nombre de neurones par couche~: 100, 300, 500 et 700.
 
@@ -445,7 +449,7 @@ Neurones/couche & \multicolumn{2}{c}{Erreur test (\%)} & \multicolumn{2}{c}{Erre
 
 Cela peut s'expliquer en examinant les erreurs d'entra\^inement~: le r\'eseau pr\'e-entra\^in\'e avec 100 neurones a une erreur d'entra\^inement relativement \'elev\'ee (1.16\,\%), sugg\'erant que le pr\'e-entra\^inement peut imposer une initialisation trop rigide pour les petits r\'eseaux, limitant leur flexibilit\'e lors de la r\'etropropagation. Lorsque la largeur augmente, le r\'eseau pr\'e-entra\^in\'e peut mieux exploiter les caract\'eristiques plus riches apprises durant la phase non supervis\'ee, atteignant finalement 0\,\% d'erreur d'entra\^inement et la meilleure erreur de test \`a 700 neurones. Le r\'eseau al\'eatoire plafonne \`a $\approx 2.67\,\%$ d'erreur de test quelle que soit la largeur au-del\`a de 300 neurones. Pour notre meilleur mod\`ele, \textbf{700 neurones par couche} est optimal.
 
-\subsection{Figure 3~: Taux d'erreur en fonction du nombre d'\'echantillons d'entra\^inement}
+\subsection{Exp\'erience 3~: Taux d'erreur en fonction du nombre d'\'echantillons d'entra\^inement}
 
 Nous fixons l'architecture \`a $[784, 200, 200, 10]$ et varions le nombre d'\'echantillons d'entra\^inement~: 1\,000, 3\,000, 7\,000, 10\,000, 30\,000 et 60\,000.
 
